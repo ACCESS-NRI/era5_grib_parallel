@@ -1,0 +1,44 @@
+[project]
+name = "era5grib-parallel"
+authors = [
+  {name = "Chermelle Engel", email="chermelle.engel@anu.edu.au"},
+  {name = "Davide Marchegiani", email="davide.marchegiani@anu.edu.au"},
+]
+maintainers = [
+    { name = "ACCESS-NRI", email = "access.nri@anu.edu.au" }
+]
+description = "Package to set up era5 grib files for use within ACCESS-RAM suites."
+license = { file = "LICENSE" }
+readme = "README.md"
+keywords = ["ACCESS-RAM", "Regional Nesting Suite", "era5grib"]
+dynamic = ["version"]
+dependencies = [
+    "python >=3.10,<=3.12",
+    "pandas",
+    "versioneer",
+]
+
+[project.urls]
+Repository = "https://github.com/ACCESS-NRI/era5_grib_parallel"
+
+[project.scripts]
+era5grib_parallel = "era5grib_parallel.nci_era5grib_parallel:main"
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools>64", 
+    "versioneer[toml]"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
+[tool.versioneer]
+VCS = "git"
+style = "pep440"
+versionfile_source = "src/era5grib_parallel/_version.py"
+versionfile_build = "era5grib_parallel/_version.py"
+tag_prefix = ""
+parentdir_prefix = "era5grib-parallel-"
