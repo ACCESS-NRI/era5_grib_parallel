@@ -1,0 +1,108 @@
+name: CD
+
+on:
+    push:
+      tags:
+        - '**'
+
+jobs:
+  validate-tag:
+    name: Check no-jump in tags
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+      
+      - name: Validate tag
+        run: |
+          # If previous tag is X.Y, valid tags are only X.(Y+1) or (X+1).0
+          prev=($(git tag -l --sort=-v:refname | head -n 2 | tail -n 1 | tr "." " "))
+          val1="${prev[0]}.$((${prev[1]}+1))" # X.(Y+1)
+          val2="$((${prev[0]}+1)).0" # (X+1).0
+          if [[ "${{github.ref_name}}" != "$val1" ]] && \
+          [[ "${{github.ref_name}}" != "$val2" ]]; then
+              echo "Invalid tag \"${{github.ref_name}}\" when previous tag is 
+              \"$(sed 's/ /./' <<< ${prev[@]})\"."
+              exit 1
+          fi
+          done
+  
+  get-package-name:
+    name: Get package name
+    runs-on: ubuntu-latest
+    needs: validate-tag
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+      
+      - name: Get package name
+        run: |
+          echo "PACKAGE_NAME=$(yq -oy '.project.name' pyproject.toml)" >> $GITHUB_ENV
+  
+  release-conda-package:
+    name: Build with conda and upload to anaconda.org
+    runs-on: ubuntu-latest
+    needs: validate-tag
+    env:
+      BUILD_FOLDER: ${{github.workspace}}/build
+      PACKAGE_PATH: ${{github.workspace}}/build/noarch/*.tar.bz2
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+            fetch-tags: true
+            fetch-depth: 0 
+
+      - name: Setup conda environment
+        uses: conda-incubator/setup-miniconda@11b562958363ec5770fef326fe8ef0366f8cbf8a
+        with:
+          miniconda-version: "latest"
+          python-version: ${{ vars.PY_VERSION }}
+          environment-file: .conda/env_build.yml
+          auto-update-conda: false
+          auto-activate-base: false
+          show-channel-urls: true
+      
+      - name: Build conda package
+        run: |
+          conda build . --no-anaconda-upload --output-folder=${{env.BUILD_FOLDER}} -c conda-forge -c accessnri -c coecms
+      
+      - name: Upload conda package
+        run: |
+          anaconda -t ${{ secrets.ANACONDA_TOKEN }} upload --user accessnri ${{env.PACKAGE_PATH}}
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 #v2.0.8
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{env.PACKAGE_NAME}} ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            ${{env.PACKAGE_PATH}}
+
+  # Dispatch the access-ram-condaenv repo (within the same GitHub organization) to update the conda environment 
+  # and deploy the new conda environment
+  dispatch-access-ram-condaenv:
+    name: Dispatch the ${{ github.repository_owner }}/access-ram-condaenv repo
+    runs-on: ubuntu-latest
+    needs: release-conda-package
+    steps:
+    - name: Dispatch repo
+      uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3.0.0
+      with:
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        repository: ${{ github.repository_owner }}/access-ram-condaenv
+        event-type: release
+        client-payload: |-
+          {
+            "dependency": "${{env.PACKAGE_NAME}}",
+            "version": "${{github.ref_name}}",
+            "token": "${{secrets.REPO_ACCESS_TOKEN}}"
+          }
