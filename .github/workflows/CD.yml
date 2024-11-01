@@ -18,15 +18,18 @@ jobs:
       
       - name: Check no jumps in tags
         run: |
-          # If a previous tag is X.Y, valid tags are only X.(Y+1) or (X+1).0
+          # The format of a tag (version) should be MAJOR.MINOR
+          # If a previous tag is MAJOR.MINOR, valid tags are only MAJOR.(MINOR+1) or (MAJOR+1).0
           if [[ $(git tag -l | wc -l) != 1 ]]; then # If there is only one tag, no need to check
-            prev=($(git tag -l --sort=-v:refname | head -n 2 | tail -n 1 | tr "." " "))
-            val1="${prev[0]}.$((${prev[1]}+1))" # X.(Y+1)
-            val2="$((${prev[0]}+1)).0" # (X+1).0
+            # Find the previous tag
+            prev=$(git tag -l --sort=-v:refname | head -n 2 | tail -n 1)
+            # Split the previous tag into an array of MAJOR and MINOR version components. E.g., for `3.11` it returns the array (3 11)
+            ver_comp=($(tr "." " " <<< $prev))
+            val1="${ver_comp[0]}.$((${ver_comp[1]}+1))" # MAJOR.(MINOR+1)
+            val2="$((${ver_comp[0]}+1)).0" # (MAJOR+1).0
             if [[ "${{github.ref_name}}" != "$val1" ]] && \
             [[ "${{github.ref_name}}" != "$val2" ]]; then
-                echo "Invalid tag \"${{github.ref_name}}\" when previous tag is 
-                \"$(sed 's/ /./' <<< ${prev[@]})\"."
+                echo "Invalid tag \"${{github.ref_name}}\" when previous tag is \"$prev\"."
                 exit 1
             fi
           fi
@@ -47,7 +50,7 @@ jobs:
       - name: Get name
         id: get-package-name
         run: |
-          echo "package-name=$(yq -oy '.project.name' pyproject.toml)" >> $GITHUB_OUTPUT
+          echo "package-name=$(yq '.project.name' pyproject.toml)" >> $GITHUB_OUTPUT
   
   release-conda-package:
     name: Build with conda and release
@@ -83,7 +86,7 @@ jobs:
       - name: Upload conda package to Anaconda.org
         shell: bash -el {0}
         run: |
-          anaconda -t ${{ secrets.ANACONDA_TOKEN }} upload --user accessnri ${{env.PACKAGE_PATH}}
+          anaconda -t ${{ secrets.ANACONDA_TOKEN }} upload --user ${{ secrets.ANACONDA_USER_NAME }} ${{env.PACKAGE_PATH}}
       
       - name: Create Release
         uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 #v2.0.8
