@@ -81,7 +81,7 @@ jobs:
       - name: Build conda package
         shell: bash -el {0}
         run: |
-          conda build . --no-anaconda-upload --output-folder=${{env.BUILD_FOLDER}} -c conda-forge -c accessnri -c coecms
+          conda build . --no-anaconda-upload --output-folder=${{env.BUILD_FOLDER}} -c accessnri -c conda-forge -c coecms
       
       - name: Upload conda package to Anaconda.org
         shell: bash -el {0}
@@ -108,12 +108,12 @@ jobs:
     - name: Dispatch repo
       uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3.0.0
       with:
-        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        token: ${{ secrets.ADMIN_TOKEN }}
         repository: ${{ github.repository_owner }}/access-ram-condaenv
         event-type: release
         client-payload: |-
           {
             "dependency": "${{needs.get-package-name.outputs.package-name}}",
             "version": "${{github.ref_name}}",
-            "token": "${{secrets.REPO_ACCESS_TOKEN}}"
+            "token": "${{secrets.ADMIN_TOKEN}}"
           }
