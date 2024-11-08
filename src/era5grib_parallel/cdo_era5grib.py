@@ -14,8 +14,7 @@ ERADIR = "/g/data/rt52/era5/"
 
 
 def fields():
-    """
-    Short function to return a list of lines with one line per field to be packaged (in order).
+    """Short function to return a list of lines with one line per field to be packaged (in order).
     Each line contains the ERA field name, whether the field is a single or pressure-level field
     and the field number (in the ECMWF table)
 
@@ -27,8 +26,8 @@ def fields():
     -------
     list of string
         List of comma-delimited strings
-    """
 
+    """
     lines = [
         "skt, single, 235",
         "sp, single, 134",
@@ -54,8 +53,7 @@ def fields():
 
 
 def repackage_grib(dt_string, outdir):
-    """
-    For a single date/time, this function reads through the ERA5 netcdf archive
+    """For a single date/time, this function reads through the ERA5 netcdf archive
     to produce a GRIB file for UM driving model reconfiguration.
 
     Parameters
@@ -69,8 +67,8 @@ def repackage_grib(dt_string, outdir):
     Returns
     -------
     None.  The GRIB file is left in the outdir directory.
-    """
 
+    """
     r = "%10.10f" % random()
     r = r.replace("0.", "")
 
@@ -95,28 +93,17 @@ def repackage_grib(dt_string, outdir):
 
         # Select out the specific date/time from the netcdf archive file
         outfname = var + "_" + compact_dt_string + "_" + r + ".nc"
-        cmd = (
-            "cdo --eccodes seldate,"
-            + dt_string
-            + " "
-            + filedir
-            + "/"
-            + fname
-            + " "
-            + outfname
-        )
+        cmd = "cdo -L --eccodes seldate," + dt_string + " " + filedir + "/" + fname + " " + outfname
         os.system(cmd)
 
         # Change the name of the variable if sea-ice
         if var == "ci":
-            os.system(
-                "cdo --eccodes chname,siconc,ci " + outfname + " " + outfname + ".1"
-            )
+            os.system("cdo -L --eccodes chname,siconc,ci " + outfname + " " + outfname + ".1")
             os.system("mv " + outfname + ".1 " + outfname)
 
         # Add the eccode and table information
         cmd = (
-            "cdo -setattribute,"
+            "cdo -L -setattribute,"
             + var
             + "@code=%d" % eccode
             + " -setattribute,"
@@ -139,13 +126,11 @@ def repackage_grib(dt_string, outdir):
         os.remove(outfname.replace(".nc", ""))
 
     # merge the data into a single netcdf file
-    cmd = "cdo --eccodes merge " + " ".join(merge_files) + " " + outfname
+    cmd = "cdo -L --eccodes merge " + " ".join(merge_files) + " " + outfname
     os.system(cmd)
 
     # convert the netcdf file into grib1 format
-    os.system(
-        "cdo --eccodes -f grb1 copy " + outfname + " " + outfname.replace(".nc", "")
-    )
+    os.system("cdo -L --eccodes -f grb1 copy " + outfname + " " + outfname.replace(".nc", ""))
 
     # Remove all the small files
     for fname in merge_files:

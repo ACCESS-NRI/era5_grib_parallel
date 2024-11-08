@@ -3,7 +3,7 @@ indent-width = 4
 
 [format]
 quote-style = "double"  
-indent-style = "tab"
+indent-style = "space"
 
 [lint]
 select = [
