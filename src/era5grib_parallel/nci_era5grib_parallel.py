@@ -18,19 +18,11 @@ where FDATE is in YYYYmmddHHMM format
 from pathlib import Path
 import argparse
 from multiprocessing import Pool, TimeoutError
-import time
 import os
-import random
-from datetime import datetime,timedelta
+from datetime import timedelta
 import pandas
-import shutil
 
-import cdo_era5grib
-
-boolopt = {
-    "True": True,
-    "False": False,
-}
+from era5grib_parallel import cdo_era5grib
 
 def create_grib(START,outdir):
 
@@ -105,7 +97,11 @@ def main():
 
             # launching multiple evaluations asynchronously *may* use more processes
             multiple_results = [pool.apply_async(create_grib, (dt,args.output,)) for dt in subset_dates]
-            print([res.get(timeout=600) for res in multiple_results])
+            for res in multiple_results:
+                try:
+                    res.get(timeout=600)
+                except TimeoutError as e:
+                    print(e)
 
         print("For the moment, the pool remains available for more work")
 

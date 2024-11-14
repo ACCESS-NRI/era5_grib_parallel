@@ -5,9 +5,8 @@
 #
 # Created by: Chermelle Engel <Chermelle.Engel@anu.edu.au>
 
-import sys
 import os
-from datetime import datetime,timedelta
+from datetime import datetime
 from random import random
 
 # Base directory of the ERA5 archive on NCI
@@ -93,17 +92,17 @@ def repackage_grib(dt_string,outdir):
 
         # Select out the specific date/time from the netcdf archive file
         outfname = var + "_" + compact_dt_string + "_" + r + ".nc"
-        cmd = "cdo --eccodes seldate," + dt_string + " " + filedir + "/" + fname + " " + outfname
+        cmd = "cdo -L --eccodes seldate," + dt_string + " " + filedir + "/" + fname + " " + outfname
         os.system(cmd)
 
         # Change the name of the variable if sea-ice
         if var == "ci":
-          os.system("cdo --eccodes chname,siconc,ci " + outfname + " " + outfname + ".1")
+          os.system("cdo -L --eccodes chname,siconc,ci " + outfname + " " + outfname + ".1")
           os.system("mv " + outfname + ".1 " + outfname)
 
 
         # Add the eccode and table information
-        cmd = "cdo -setattribute," + var + "@code=%d"%eccode + " -setattribute," + var + "@table=128 " + outfname + " " + outfname+".1"
+        cmd = "cdo -L -setattribute," + var + "@code=%d"%eccode + " -setattribute," + var + "@table=128 " + outfname + " " + outfname+".1"
         os.system(cmd)
         os.system("mv " + outfname + ".1 "+outfname)
 
@@ -116,11 +115,11 @@ def repackage_grib(dt_string,outdir):
             os.remove(outfname.replace('.nc', ''))
 
     # merge the data into a single netcdf file  
-    cmd = "cdo --eccodes merge " + " ".join(merge_files) + " " + outfname
+    cmd = "cdo -L --eccodes merge " + " ".join(merge_files) + " " + outfname
     os.system(cmd)
 
     # convert the netcdf file into grib1 format
-    os.system("cdo --eccodes -f grb1 copy " + outfname + " " + outfname.replace('.nc', ''))
+    os.system("cdo -L --eccodes -f grb1 copy " + outfname + " " + outfname.replace('.nc', ''))
 
     # Remove all the small files
     for fname in merge_files:
