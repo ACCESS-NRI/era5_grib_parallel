@@ -87,7 +87,7 @@ jobs:
     - name: Dispatch repo
       uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3.0.0
       with:
-        token: ${{ secrets.ADMIN_TOKEN }}
+        token: ${{secrets.REPO_CONTENT_WRITE_TOKEN}}
         repository: ${{ github.repository_owner }}/access-ram-condaenv
         event-type: prerelease
         client-payload: |-
