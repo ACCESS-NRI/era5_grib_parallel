@@ -92,5 +92,5 @@ jobs:
         event-type: prerelease
         client-payload: |-
           {
-            "token": "${{secrets.ADMIN_TOKEN}}"
+            "token": "${{secrets.NO_PERMISSIONS_TOKEN}}"
           }
