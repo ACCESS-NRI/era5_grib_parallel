@@ -92,5 +92,5 @@ jobs:
         event-type: prerelease
         client-payload: |-
           {
-            "token": "${{secrets.NO_PERMISSIONS_TOKEN}}"
+            "token": "${{secrets.REPO_DISPATCH_VERIFICATION_TOKEN}}"
           }

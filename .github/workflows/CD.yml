@@ -86,5 +86,5 @@ jobs:
           {
             "dependency": "${{needs.get-package-name.outputs.package-name}}",
             "version": "${{github.ref_name}}",
-            "token": "${{secrets.NO_PERMISSIONS_TOKEN}}"
+            "token": "${{secrets.REPO_DISPATCH_VERIFICATION_TOKEN}}"
           }
